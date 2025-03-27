@@ -1,0 +1,375 @@
+---
+
+# Comments meaning:
+# '#' <- Consider using in the future
+# '##' <- Reserved
+# '###' <- Likely irrelevant
+# '####' <- Deprectated according to clang-format docs
+# https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+BasedOnStyle: GNU
+
+AccessModifierOffset: 4
+
+AlignAfterOpenBracket: true
+
+AlignArrayOfStructures: Right
+
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: true
+  PadOperators: true
+
+AlignConsecutiveBitFields:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+
+AlignConsecutiveDeclarations:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+  AlignFunctionDeclarations: true
+  AlignFunctionPointers: true
+
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+
+### AlignConsecutiveTableGenBreakingDAGArgColons
+### AlignConsecutiveTableGenCondOperatorColons
+### AlignConsecutiveTableGenDefinitionColons
+
+AlignEscapedNewlines: LeftWithLastLine
+
+AlignOperands: Align
+
+AlignTrailingComments:
+  Kind: Always
+  OverEmptyLines: 2
+
+AllowAllArgumentsOnNextLine: true
+
+AllowAllParametersOfDeclarationOnNextLine: false
+
+### AllowBreakBeforeNoexceptSpecifier
+
+AllowShortBlocksOnASingleLine: Empty
+
+AllowShortCaseExpressionOnASingleLine: false
+
+AllowShortCaseLabelsOnASingleLine: true
+
+### AllowShortCompoundRequirementOnASingleLine
+
+AllowShortEnumsOnASingleLine: false
+
+AllowShortFunctionsOnASingleLine: false
+
+AllowShortIfStatementsOnASingleLine: WithoutElse
+
+### AllowShortLambdasOnASingleLine
+
+AllowShortLoopsOnASingleLine: true
+
+### AllowShortNamespacesOnASingleLine
+
+#### AlwaysBreakAfterDefinitionReturnType
+#### AlwaysBreakAfterReturnType
+
+AlwaysBreakBeforeMultilineStrings: false
+
+#### AlwaysBreakTemplateDeclarations
+
+# AttributeMacros
+
+BinPackArguments: false
+
+BinPackLongBracedList: true
+
+BinPackParameters: OnePerLine
+
+BitFieldColonSpacing: Both
+
+# BraceWrapping
+# BracedInitializerIndentWidth
+
+BreakAdjacentStringLiterals: true
+
+### BreakAfterAttributes
+### BreakAfterJavaFieldAnnotations 
+
+BreakAfterReturnType: ExceptShortType # !! REVIEW ME !!
+
+### BreakArrays
+
+BreakBeforeBinaryOperators: None 
+
+BreakBeforeBraces: Allman # !! DEAL WITH IT !!
+
+### BreakBeforeConceptDeclarations
+
+BreakBeforeInlineASMColon: OnlyMultiline
+
+### BreakBeforeTemplateCloser
+
+BreakBeforeTernaryOperators: false
+
+BreakBinaryOperations: Never # !! REVIEW ME !!
+
+### BreakConstructorInitializers
+
+BreakFunctionDefinitionParameters: false
+
+### BreakInheritanceList
+
+BreakStringLiterals: false # !! REVIEW ME !!
+
+### BreakTemplateDeclarations
+
+ColumnLimit: 80 # !! REVIEW ME !!
+
+# CommentPragmas: 
+
+### CompactNamespaces
+
+#### ConstructorInitializerAllOnOneLineOrOnePerLine
+
+### ConstructorInitializerIndentWidth
+
+ContinuationIndentWidth: 4 # !! REVIEW ME !!
+
+### Cpp11BracedListStyle 
+
+#### DeriveLineEnding
+
+DerivePointerAlignment: false # !! REVIEW ME !!
+
+# DisableFormat 
+
+### EmptyLineAfterAccessModifier 
+
+### EmptyLineBeforeAccessModifier 
+
+# ExperimentalAutoDetectBinPacking
+
+### FixNamespaceComments
+
+# ForEachMacros
+
+# IfMacros
+
+IncludeBlocks: Preserve
+
+# IncludeCategories
+# IncludeIsMainRegex
+# IncludeIsMainSourceRegex
+
+### IndentAccessModifiers
+
+IndentCaseBlocks: false
+
+IndentCaseLabels: true
+
+### IndentExportBlock: true
+
+IndentExternBlock: true
+
+IndentGotoLabels: true # !! REVIEW ME !!
+
+IndentPPDirectives: BeforeHash
+
+### IndentRequiresClause
+
+IndentWidth: 4 # !! DEAL WITH IT !!
+
+IndentWrappedFunctionNames: true
+
+# InsertBraces: true # !! USEFUL BUT CONSIDERED DANGEROUS !!
+
+InsertNewlineAtEOF: true
+
+InsertTrailingCommas: None
+
+### IntegerLiteralSeparator
+
+### JavaImportGroups 
+### JavaScriptQuotes
+### JavaScriptWrapImports 
+
+KeepEmptyLines:
+  AtEndOfFile: false
+  AtStartOfBlock: false
+  AtStartOfFile: false
+
+#### KeepEmptyLinesAtEOF
+#### KeepEmptyLinesAtTheStartOfBlocks 
+
+KeepFormFeed: false # !! REVIEW ME !!
+
+### LambdaBodyIndentation
+
+# Language: C # This unfortunately makes headers fail *shrug*
+
+LineEnding: LF
+
+# MacroBlockBegin
+# MacroBlockEnd
+
+# Macros  # !! REVIEW ME !!
+
+# MainIncludeChar
+
+MaxEmptyLinesToKeep: 4
+
+### NamespaceIndentation
+### NamespaceMacros
+### ObjCBinPackProtocolList 
+### ObjCBlockIndentWidth
+### ObjCBreakBeforeNestedBlockParam
+### ObjCPropertyAttributeOrder
+### ObjCSpaceAfterProperty
+### ObjCSpaceBeforeProtocolList
+
+PPIndentWidth: -1
+
+### PackConstructorInitializers
+
+PenaltyBreakAssignment: 10
+PenaltyBreakBeforeFirstCallParameter: 1000
+PenaltyBreakBeforeMemberAccess: 100
+
+# PenaltyBreakComment
+# PenaltyBreakFirstLessLess
+PenaltyBreakOpenParenthesis: 1000
+PenaltyExcessCharacter: 1000
+# PenaltyBreakScopeResolution
+# PenaltyBreakString
+# PenaltyBreakTemplateDeclaration
+# PenaltyExcessCharacter
+# PenaltyIndentedWhitespace
+# PenaltyReturnTypeOnItsOwnLine
+
+PointerAlignment: Middle
+
+QualifierAlignment: Leave
+
+# QualifierOrder # !! REVIEW ME !!
+
+### RawStringFormats
+
+### ReferenceAlignment 
+
+ReflowComments: IndentOnly # !! REVIEW ME !!
+
+### RemoveBracesLLVM
+
+RemoveEmptyLinesInUnwrappedLines: true
+
+# RemoveParentheses
+
+# RemoveSemicolon # !! USEFUL BUT CONSIDERED DANGEROUS !!
+
+### RequiresClausePosition
+
+### RequiresExpressionIndentation
+
+SeparateDefinitionBlocks: Always
+
+### ShortNamespaceLines 
+
+SkipMacroDefinitionBody: false # !! REVIEW ME !!
+
+SortIncludes: Never # !! REVIEW ME !!
+
+### SortJavaStaticImport 
+### SortUsingDeclarations
+
+
+SpaceAfterCStyleCast: false
+
+SpaceAfterLogicalNot: false
+
+### SpaceAfterTemplateKeyword
+
+SpaceAroundPointerQualifiers: Both
+
+SpaceBeforeAssignmentOperators: true
+
+SpaceBeforeCaseColon: false
+
+### SpaceBeforeCpp11BracedList
+
+### SpaceBeforeCtorInitializerColon
+
+### SpaceBeforeInheritanceColon
+
+### SpaceBeforeJsonColon
+
+SpaceBeforeParens: ControlStatementsExceptControlMacros
+
+# SpaceBeforeParensOptions
+
+### SpaceBeforeRangeBasedForLoopColon
+
+SpaceBeforeSquareBrackets: false
+
+SpaceInEmptyBlock: true
+
+#### SpaceInEmptyParentheses
+
+SpacesBeforeTrailingComments: 1
+
+### SpacesInAngles
+
+#### SpacesInCStyleCastParentheses
+
+#### SpacesInConditionalStatement
+
+SpacesInLineCommentPrefix:
+  Minimum: 1
+  Maximum: -1
+
+SpacesInParens: Never # !! REVIEW ME !!
+
+# SpacesInParensOptions
+
+#### SpacesInParentheses 
+
+SpacesInSquareBrackets: false
+
+### Standard
+
+# StatementAttributeLikeMacros
+
+# StatementMacros # !! REVIEW ME !!
+
+TabWidth: 4
+
+### TableGenBreakInsideDAGArg
+### TableGenBreakingDAGArgOperators 
+### TemplateNames 
+
+# TypeNames # !! REVIEW ME !!
+
+# TypenameMacros # !! REVIEW ME !!
+
+#### UseCRLF
+
+UseTab: Never
+
+### VariableTemplates 
+
+### VerilogBreakBetweenInstancePorts
+
+WhitespaceSensitiveMacros: [UTIL_XSTR, F_UTIL_XSTR]
+
+### WrapNamespaceBodyWithEmptyLines
