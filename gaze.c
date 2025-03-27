@@ -123,15 +123,6 @@ void exit_failed(int exit_code, const char * format, ...)
     exit_curses(exit_code);
 }
 
-void exit_failed_perror(const char * msg)
-{
-    endwin();
-
-    perror(msg);
-
-    exit_curses(1);
-}
-
 /*******************************************************************************
 Handle signals
 *******************************************************************************/
@@ -155,23 +146,22 @@ void handle_signals()
 
     for (i = SIGHUP; i < SIGTERM; i++)
     {
-        if (i != SIGKILL && i != SIGALRM)
+        if (i == SIGKILL)
         {
-            sa.sa_handler = &sig_finish;
-
-            if (sigaction(i, &sa, NULL) == -1)
-            {
-                exit_failed_perror("Error: Unable to handle signal");
-            }
+            continue;
         }
         else if (i == SIGALRM)
         {
             sa.sa_handler = &sig_nothing;
+        }
+        else
+        {
+            sa.sa_handler = &sig_finish;
+        }
 
-            if (sigaction(i, &sa, NULL) == -1)
-            {
-                exit_failed_perror("Error: Unable to handle SIGALRM");
-            }
+        if (sigaction(i, &sa, NULL) == -1)
+        {
+            exit_failed(1, "Error: sigaction(%d): %s", i, strerror(errno));
         }
     }
 }
@@ -191,14 +181,14 @@ void set_timer(unsigned int milliseconds)
 
     if (setitimer(ITIMER_REAL, &it_val, NULL) == -1)
     {
-        exit_failed_perror("Error: setitimer()");
+        exit_failed(1, "Error: setitimer(): %s", strerror(errno));
     }
 }
 
 /*******************************************************************************
-Execute command and read results to buffer
+Execute command and read results to buffer from pipe
 *******************************************************************************/
-char * read_cmd(char * argv[])
+char * cmd_to_buffer(char * argv[])
 {
     char * buffer;
     size_t size;
@@ -326,7 +316,7 @@ int count_int_chars(int n)
 /*******************************************************************************
 Create pad from buffer
 *******************************************************************************/
-WINDOW * display(const char * buffer, int * cols_count, int * lines_count)
+WINDOW * newpad_buffer(const char * buffer, int * cols_count, int * lines_count)
 {
     WINDOW *     pad;
     int          lines;
@@ -407,17 +397,17 @@ WINDOW * display(const char * buffer, int * cols_count, int * lines_count)
 /*******************************************************************************
 Run command and create pad from results
 *******************************************************************************/
-WINDOW * display_cmd(char * argv[])
+WINDOW * newpad_cmd(char * argv[])
 {
     WINDOW * pad;
     char *   buffer;
 
-    if (!(buffer = read_cmd(argv)))
+    if (!(buffer = cmd_to_buffer(argv)))
     {
         exit_failed(1, "Failed to allocate command output buffer");
     }
 
-    pad = display(buffer, &global.cols, &global.lines);
+    pad = newpad_buffer(buffer, &global.cols, &global.lines);
 
     global.lines_digits = count_int_chars(global.lines);
 
@@ -432,36 +422,38 @@ WINDOW * display_cmd(char * argv[])
 /*******************************************************************************
 Show help popup
 *******************************************************************************/
-void popup_help(WINDOW * parent)
+void popup_help()
 {
     const char * HELP_MSG =
-        "Press <Esc> or q to exit this window.\n\n"
+        "Press <Esc> or q to close this window.\n\n"
         "Commands:\n"
-        "  <Esc>,q         - Quit this program\n"
-        "\n"
+        "  <Esc>,q         - Quit gaze\n"
+        "  <F1>,?          - Open this help window\n"
         "  <F5>,r          - Execute command now\n"
         "\n"
-        "  <Up>,w          - Scroll up by one row\n"
-        "  <Down>,s        - Scroll down by one row\n"
-        "  <Left>,a        - Scroll left by one column\n"
-        "  <Right>,d       - Scroll right by one column\n"
-        "  <PageDn>,b      - Scroll to the next page\n"
-        "  <PageUp>,n      - Scroll to the previous page\n"
+        "  <Up>,w          - Scroll up one row\n"
+        "  <Down>,s        - Scroll down one row\n"
+        "  <Left>,a        - Scroll left one column\n"
+        "  <Right>,d       - Scroll right one column\n"
+        "  <PageDn>,b      - Scroll to next page\n"
+        "  <PageUp>,n      - Scroll to previous page\n"
         "  <Home>,h        - Scroll to top\n"
         "  <End>,e         - Scroll to end\n"
-        "  <,z             - Scroll far left\n"
-        "  >,x             - Scroll far right\n"
+        "  <,z             - Scroll to far left\n"
+        "  >,x             - Scroll to far right\n"
+        "  0 through 9     - Enter Goto Line Number Mode\n"
         "\n"
-        "Goto Line Number Mode:\n"
-        "  0 through 9     - Begin Goto Line Number Mode and/or add digit\n"
-        "  <Backspace>     - When in Goto Line Number Mode: Delete digit\n"
-        "  <Any other key> - When in Goto Line Number Mode: Exit mode\n";
+        "In Goto Line Number Mode:\n"
+        "  0 through 9     - Add digit to line number\n"
+        "  <Backspace>     - Delete digit\n"
+        "  <Esc>           - Exit mode\n"
+        "  <Any other key> - Exit mode and go to line number\n";
     const int X      = 5;
     const int Y      = 1;
-    const int WIDTH  = getmaxx(parent) - (X * 2);
-    const int HEIGHT = getmaxy(parent) - (Y * 2);
+    const int WIDTH  = COLS - (X * 2);
+    const int HEIGHT = LINES - (Y * 2);
     WINDOW *  help;
-    WINDOW *  data;
+    WINDOW *  pad;
 
     /* Create window and pad */
     if (!(help = newwin(HEIGHT, WIDTH, Y, X)))
@@ -469,7 +461,7 @@ void popup_help(WINDOW * parent)
         return;
     }
 
-    if (!(data = display(HELP_MSG, NULL, NULL)))
+    if (!(pad = newpad_buffer(HELP_MSG, NULL, NULL)))
     {
         delwin(help);
 
@@ -477,7 +469,7 @@ void popup_help(WINDOW * parent)
     }
 
     /* Enable single valued keys support */
-    keypad(data, true);
+    keypad(pad, true);
 
     /* User input loop */
     {
@@ -492,14 +484,14 @@ void popup_help(WINDOW * parent)
             werase(help);
             box(help, 0, 0);
             wnoutrefresh(help);
-            pnoutrefresh(data, 0, 0, Y + 1, X + 1, HEIGHT, WIDTH);
+            pnoutrefresh(pad, 0, 0, Y + 1, X + 1, HEIGHT, WIDTH);
             doupdate();
-        } while ((ch = wgetch(data)) != -1 && ch != ESCAPE && ch != 'q');
+        } while ((ch = wgetch(pad)) != -1 && ch != ESCAPE && ch != 'q');
     }
 
     /* Cleanup */
     delwin(help);
-    delwin(data);
+    delwin(pad);
 }
 
 /*******************************************************************************
@@ -565,7 +557,7 @@ void draw(WINDOW * pad, int top, int left, const char * cmd, bool lineno)
 /*******************************************************************************
 Print usage
 *******************************************************************************/
-void usage(int retval)
+void print_usage(int retval)
 {
     puts("Usage: gaze [options] <command>\n"
          "\n"
@@ -618,7 +610,7 @@ void parse_args(int argc, char * argv[])
 
             case 'h':
             {
-                usage(2);
+                print_usage(2);
 
                 break;
             }
@@ -757,8 +749,7 @@ void parse_args(int argc, char * argv[])
 
         if (optind == argc)
         {
-            usage(0);
-            exit_curses(2);
+            print_usage(0);
         }
     }
 }
@@ -819,7 +810,7 @@ int main(int argc, char * argv[])
             if ((int)elapsed >= global.interval)
             {
                 /* Create pad from command output */
-                pad = display_cmd(&argv[optind]);
+                pad = newpad_cmd(&argv[optind]);
 
                 /* Record relative and absolute times of command execution */
                 clock_gettime(CLOCK_MONOTONIC, &last_cmd_time);
@@ -1118,7 +1109,7 @@ int main(int argc, char * argv[])
             case KEY_F(1):
             case '?':
             {
-                popup_help(stdscr);
+                popup_help();
 
                 break;
             }
