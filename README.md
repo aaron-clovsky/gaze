@@ -2,12 +2,12 @@
 
 ## MOTIVATION
 [watchall](https://github.com/mfatemipour/watchall) is a fanastic tool
-for observing the output of commands in realtime that print more than one
-screen's worth of data, it is also out of date and requires manual patching
-after installing with pip. It also requires manually setting the size
-of the line buffer, both of which makes it incredibly annoying to use. After
-years of being annoyed by watchall throwing exceptions on long input I finally
-decided to fix the problem the hard way.
+for observing the output of commands that print more than one screen's worth
+of data. It is also out of date, requiring manual patching
+after installation as well as manually setting the length
+of the line buffer for long inputs, both of which make it incredibly annoying
+to use. After years of being annoyed by watchall throwing exceptions
+I finally decided to fix the problem the right way.
 
 ## CREDIT
 
