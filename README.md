@@ -19,11 +19,18 @@ which gaze is based on
 
 - Cleanup ```parse_args()``` because it is ugly
 - Add diff support
+- Maybe add color support
 - Maybe add support for intervals of millisecond precision
 
 ## NOTES
 
-- The clang_format file is meant to be used with clang-format-21
+- ```make style``` requires clang-format-21, run the following commands to install:
+```
+wget https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 21
+sudo apt install clang-format-21
+```
 
 ## LICENSE
 This software is licensed under the
