@@ -643,7 +643,7 @@ void parse_args(int argc, char * argv[])
 
                 if (errno != 0 || endptr == optarg)
                 {
-                    exit_failed(2, "Invalid global.interval: '%s'", optarg);
+                    exit_failed(2, "Invalid interval: '%s'", optarg);
                 }
 
                 if (global.interval < 1 || global.interval > 60)
