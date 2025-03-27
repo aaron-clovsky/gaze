@@ -190,7 +190,6 @@ void set_timer(unsigned int milliseconds)
     it_val.it_interval      = it_val.it_value;
     it_val.it_value.tv_sec  = milliseconds / 1000;
     it_val.it_value.tv_usec = (milliseconds * 1000) % 1000000;
-    it_val.it_interval      = it_val.it_value;
 
     if (setitimer(ITIMER_REAL, &it_val, NULL) == -1)
     {
@@ -252,13 +251,13 @@ char * read_cmd(char * argv[])
             _Exit(1); /* Avoid atexit() hooks */
         }
 
-        (void)dup2(dev_null, 0);
-        (void)dup2(pipefd[1], 1);
-        (void)dup2(pipefd[1], 2);
+        dup2(dev_null, 0);
+        dup2(pipefd[1], 1);
+        dup2(pipefd[1], 2);
 
-        (void)close(pipefd[0]);
-        (void)close(pipefd[1]);
-        (void)close(dev_null);
+        close(pipefd[0]);
+        close(pipefd[1]);
+        close(dev_null);
 
         /* Execute command in shell */
         execvp(args[0], args);
@@ -272,7 +271,7 @@ char * read_cmd(char * argv[])
             return NULL;
         }
 
-        (void)close(pipefd[1]);
+        close(pipefd[1]);
 
         /* Read from pipe to buffer (with timeout via SIGALRM + EINTR) */
         set_timer(global.timeout * 1000);
@@ -298,19 +297,17 @@ char * read_cmd(char * argv[])
         /* Show error message on timeout */
         if (retval == -1 && errno == EINTR)
         {
-            (void)strncpy(buffer,
-                          "\n\n\t\tCOMMAND TIMED OUT",
-                          global.buffer_size);
+            strncpy(buffer, "\n\n\t\tCOMMAND TIMED OUT", global.buffer_size);
 
             buffer[global.buffer_size - 1] = '\0';
         }
 
         /* Cleanup */
-        (void)close(pipefd[0]);
+        close(pipefd[0]);
 
-        (void)kill(SIGHUP, pid);
+        kill(SIGHUP, pid);
 
-        (void)wait(NULL);
+        wait(NULL);
     }
 
     return buffer;
@@ -345,7 +342,6 @@ WINDOW * display(const char * buffer, int * cols_count, int * lines_count)
     lines = 1;
     cols  = 1;
     tmp   = 0;
-    prev  = buffer;
 
     for (s = buffer; *s; s++)
     {
@@ -365,8 +361,7 @@ WINDOW * display(const char * buffer, int * cols_count, int * lines_count)
                 cols = tmp;
             }
 
-            tmp  = 0;
-            prev = s + 1;
+            tmp = 0;
 
             lines++;
         }
@@ -391,9 +386,9 @@ WINDOW * display(const char * buffer, int * cols_count, int * lines_count)
     {
         while (*s && *s != '\n') s++;
 
-        (void)wmove(pad, i, 0);
+        wmove(pad, i, 0);
 
-        (void)waddnstr(pad, prev, (int)(s - prev));
+        waddnstr(pad, prev, (int)(s - prev));
 
         prev = ++s;
     }
@@ -478,13 +473,13 @@ void popup_help(WINDOW * parent)
 
     if (!(data = display(HELP_MSG, NULL, NULL)))
     {
-        (void)delwin(help);
+        delwin(help);
 
         return;
     }
 
     /* Enable single valued keys support */
-    (void)keypad(data, true);
+    keypad(data, true);
 
     /* User input loop */
     {
@@ -493,20 +488,20 @@ void popup_help(WINDOW * parent)
         do {
             if (ch != -1)
             {
-                (void)beep();
+                beep();
             }
 
-            (void)werase(help);
-            (void)box(help, 0, 0);
-            (void)wnoutrefresh(help);
-            (void)pnoutrefresh(data, 0, 0, Y + 1, X + 1, HEIGHT, WIDTH);
-            (void)doupdate();
+            werase(help);
+            box(help, 0, 0);
+            wnoutrefresh(help);
+            pnoutrefresh(data, 0, 0, Y + 1, X + 1, HEIGHT, WIDTH);
+            doupdate();
         } while ((ch = wgetch(data)) != -1 && ch != ESCAPE && ch != 'q');
     }
 
     /* Cleanup */
-    (void)delwin(help);
-    (void)delwin(data);
+    delwin(help);
+    delwin(data);
 }
 
 /*******************************************************************************
@@ -531,18 +526,18 @@ void draw(WINDOW * pad, int top, int left, const char * cmd, bool lineno)
 
     cmd_len = strnlen(cmd, len);
 
-    (void)erase();
+    erase();
 
-    (void)mvprintw(0, 0, TAG_LINE_CONST "%.*s", global.interval, cmd_len, cmd);
+    mvprintw(0, 0, TAG_LINE_CONST "%.*s", global.interval, cmd_len, cmd);
 
 #undef TAG_LINE_CONST
 
     for (i = 0; i < len - cmd_len; i++)
     {
-        (void)addch(' ');
+        addch(' ');
     }
 
-    (void)printw("%s", cmd_time_str);
+    printw("%s", cmd_time_str);
 
     if (lineno)
     {
@@ -555,7 +550,7 @@ void draw(WINDOW * pad, int top, int left, const char * cmd, bool lineno)
                 break;
             }
 
-            (void)mvprintw(i, 0, "%*d:", digits, top + i);
+            mvprintw(i, 0, "%*d:", digits, top + i);
         }
     }
     else
@@ -563,10 +558,10 @@ void draw(WINDOW * pad, int top, int left, const char * cmd, bool lineno)
         digits = -1;
     }
 
-    (void)move(LINES - 1, COLS - 1);
-    (void)wnoutrefresh(stdscr);
-    (void)pnoutrefresh(pad, top, left, 1, digits + 1, LINES - 1, COLS - 1);
-    (void)doupdate();
+    move(LINES - 1, COLS - 1);
+    wnoutrefresh(stdscr);
+    pnoutrefresh(pad, top, left, 1, digits + 1, LINES - 1, COLS - 1);
+    doupdate();
 }
 
 /*******************************************************************************
@@ -574,16 +569,16 @@ Print usage
 *******************************************************************************/
 void usage(int retval)
 {
-    (void)puts("Usage: gaze [options] <command>\n"
-               "\n"
-               "Options:\n"
-               " -h Show this message\n"
-               " -l Show line number\n"
-               " -n Set interval\n"
-               " -t Set command timeout\n"
-               " -b Set buffer size\n"
-               "\n"
-               "While running press F1 or '?' for help");
+    puts("Usage: gaze [options] <command>\n"
+         "\n"
+         "Options:\n"
+         " -h Show this message\n"
+         " -l Show line number\n"
+         " -n Set interval\n"
+         " -t Set command timeout\n"
+         " -b Set buffer size\n"
+         "\n"
+         "While running press F1 or '?' for help");
 
     exit(retval);
 }
@@ -787,19 +782,19 @@ int main(int argc, char * argv[])
     /* Reduce escape delay to 50ms (from 1000ms) */
     ESCDELAY = 50;
     /* Initialize curses */
-    (void)initscr();
+    initscr();
     /* Enable support single-valued key codes */
-    (void)keypad(stdscr, true);
+    keypad(stdscr, true);
     /* Do not to convert \n to \r\n */
-    (void)nonl();
+    nonl();
     /* Disable line buffering */
-    (void)cbreak();
+    cbreak();
     /* Disable input echo */
-    (void)noecho();
+    noecho();
     /* Set getch() to be non-blocking */
-    (void)nodelay(stdscr, true);
+    nodelay(stdscr, true);
     /* Use hardware's insert/delete line features */
-    (void)idlok(stdscr, true);
+    idlok(stdscr, true);
 
     while (1)
     {
@@ -815,7 +810,7 @@ int main(int argc, char * argv[])
             uint64_t        elapsed;
 
             /* Calculate time since last command execution */
-            (void)clock_gettime(CLOCK_MONOTONIC, &poll_time);
+            clock_gettime(CLOCK_MONOTONIC, &poll_time);
 
             elapsed  = (poll_time.tv_sec - last_cmd_time.tv_sec);
             elapsed *= UINT64_C(1000000000);
@@ -829,7 +824,7 @@ int main(int argc, char * argv[])
                 pad = display_cmd(&argv[optind]);
 
                 /* Record relative and absolute times of command execution */
-                (void)clock_gettime(CLOCK_MONOTONIC, &last_cmd_time);
+                clock_gettime(CLOCK_MONOTONIC, &last_cmd_time);
 
                 global.cmd_time = time(NULL);
 
@@ -860,7 +855,7 @@ int main(int argc, char * argv[])
 
             if (ch == -1)
             {
-                (void)napms(50); /* Delay 50ms */
+                napms(50); /* Delay 50ms */
 
                 if (goto_line_number)
                 {
@@ -877,8 +872,8 @@ int main(int argc, char * argv[])
                 {
                     line_number = 0;
 
-                    (void)mvprintw(0, 0, "Line: ");
-                    (void)clrtoeol();
+                    mvprintw(0, 0, "Line: ");
+                    clrtoeol();
                 }
 
                 goto_line_number = true;
@@ -890,7 +885,7 @@ int main(int argc, char * argv[])
 
                 if (line_number < 200000000)
                 {
-                    (void)addch(ch & 0xff);
+                    addch(ch & 0xff);
 
                     line_number = line_number * 10 + (ch - '0');
                 }
@@ -907,9 +902,9 @@ int main(int argc, char * argv[])
                 if (line_number != 0)
                 {
                     line_number /= 10;
-                    (void)move(y, x - 1);
-                    (void)addch(' ');
-                    (void)move(y, x - 1);
+                    move(y, x - 1);
+                    addch(' ');
+                    move(y, x - 1);
                 }
 
                 continue;
@@ -954,7 +949,7 @@ int main(int argc, char * argv[])
             }
             default:
             {
-                (void)beep();
+                beep();
 
                 break;
             }

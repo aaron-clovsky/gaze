@@ -15,6 +15,14 @@ I finally decided to fix the problem the right way.
 - [Thomas E. Dickey](https://github.com/ThomasDickey) for writing padview.c,
 which gaze is based on
 
+## INSTALL
+
+- Run ```sudo make install```
+
+## UNINSTALL
+
+- Run ```sudo make uninstall```
+
 ## TODO
 
 - Cleanup ```parse_args()``` because it is ugly
@@ -25,7 +33,8 @@ which gaze is based on
 
 ## NOTES
 
-- ```make style``` requires clang-format-21, run the following commands to install:
+- ```make style``` is implemented to keep code within style guidelines, 
+it requires clang-format-21, run the following commands to install:
 ```
 wget https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
