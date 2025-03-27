@@ -19,6 +19,7 @@ which gaze is based on
 
 - Cleanup ```parse_args()``` because it is ugly
 - Add diff support
+- Add search support
 - Maybe add color support
 - Maybe add support for intervals of millisecond precision
 
