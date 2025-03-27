@@ -142,9 +142,7 @@ void sig_finish(int sig __attribute__((unused)))
     exit_curses(1);
 }
 
-void sig_nothing(int sig __attribute__((unused)))
-{
-}
+void sig_nothing(int sig __attribute__((unused))) { }
 
 void handle_signals()
 {
