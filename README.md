@@ -32,14 +32,17 @@ which gaze is based on
 
 ## NOTES
 
-- ```make style``` is implemented to keep code within style guidelines, 
-it requires clang-format-21, run the following commands to install:
+- ```make style``` is implemented to keep code within style guidelines,
+it requires clang-format-21, run the following to install:
 ```
 wget https://apt.llvm.org/llvm.sh
 chmod +x llvm.sh
 sudo ./llvm.sh 21
 sudo apt install clang-format-21
 ```
+
+- ```make lint``` is implemented to help check for warnings it
+requires: gcc, g++, clang, clang++ and cppcheck
 
 ## LICENSE
 This software is licensed under the

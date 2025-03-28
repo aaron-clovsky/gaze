@@ -73,8 +73,9 @@ Macros
 
 /* Deal with warnings */
 #ifdef __GNUC__
-    #define FALLTHROUGH __attribute__((__fallthrough__))
-    #define UNUSED      __attribute__((unused))
+    #define UNUSED __attribute__((unused))
+#else
+    #define UNUSED
 #endif
 
 /*******************************************************************************
@@ -123,7 +124,7 @@ void exit_failed(int exit_code, const char * format, ...)
 
     va_end(args);
 
-    exit_curses(exit_code);
+    exit(exit_code);
 }
 
 /*******************************************************************************
@@ -133,7 +134,7 @@ void sig_finish(int sig UNUSED)
 {
     endwin();
 
-    exit_curses(1);
+    exit(1);
 }
 
 void sig_nothing(int sig UNUSED) { }
@@ -729,9 +730,9 @@ void parse_args(int argc, char * argv[])
                 switch (*endptr)
                 {
                     case 'g':
-                    case 'G': tmp *= 1024; FALLTHROUGH;
+                    case 'G': tmp *= 1024; /* fall through */
                     case 'm':
-                    case 'M': tmp *= 1024; FALLTHROUGH;
+                    case 'M': tmp *= 1024; /* fall through */
                     case 'k':
                     case 'K': tmp *= 1024; break;
                     default:
@@ -1163,9 +1164,8 @@ int main(int argc, char * argv[])
             case 'q':
             {
                 endwin();
-                exit_curses(0);
 
-                break; /* Unreachable */
+                exit(0);
             }
         }
     }
