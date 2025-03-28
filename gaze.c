@@ -582,7 +582,10 @@ bool option(const char * curt, const char * verbose, char * opt, char ** endptr)
 {
     if (strcmp(verbose, opt) == 0)
     {
-        *endptr = (char *)"";
+		if (endptr)
+		{
+			*endptr = (char *)"";
+		}
 
         return true;
     }
