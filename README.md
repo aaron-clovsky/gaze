@@ -25,7 +25,6 @@ which gaze is based on
 
 ## TODO
 
-- Cleanup ```parse_args()``` because it is ugly
 - Add diff support
 - Add search support
 - Maybe add color support

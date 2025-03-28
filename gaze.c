@@ -72,7 +72,10 @@ Macros
 #define ESCAPE  CTRL('[')
 
 /* Deal with warnings */
-#define FALLTHROUGH __attribute__((__fallthrough__))
+#ifdef __GNUC__
+    #define FALLTHROUGH __attribute__((__fallthrough__))
+    #define UNUSED      __attribute__((unused))
+#endif
 
 /*******************************************************************************
 Globals
@@ -126,14 +129,14 @@ void exit_failed(int exit_code, const char * format, ...)
 /*******************************************************************************
 Handle signals
 *******************************************************************************/
-void sig_finish(int sig __attribute__((unused)))
+void sig_finish(int sig UNUSED)
 {
     endwin();
 
     exit_curses(1);
 }
 
-void sig_nothing(int sig __attribute__((unused))) { }
+void sig_nothing(int sig UNUSED) { }
 
 void handle_signals()
 {
@@ -188,10 +191,9 @@ void set_timer(unsigned int milliseconds)
 /*******************************************************************************
 Execute command and read results to buffer from pipe
 *******************************************************************************/
-char * cmd_to_buffer(char * argv[])
+char * cmd_to_buffer(char * cmd)
 {
     char * buffer;
-    size_t size;
     int    pipefd[2];
     int    pid;
 
@@ -202,32 +204,10 @@ char * cmd_to_buffer(char * argv[])
 
     if (!(pid = fork()))
     {
-        char * cmd;
         char * args[4];
         int    dev_null;
-        int    i;
 
         /* Prepare command */
-        size = 1;
-
-        for (i = 0; argv[i]; i++)
-        {
-            size += strlen(argv[i]) + 1;
-        }
-
-        if (!(cmd = (char *)malloc(size)))
-        {
-            _Exit(1); /* Avoid atexit() hooks */
-        }
-
-        cmd[0] = '\0';
-
-        for (i = 0; argv[i]; i++)
-        {
-            strcat(cmd, argv[i]);
-            strcat(cmd, " ");
-        }
-
         args[0] = (char *)"sh";
         args[1] = (char *)"-c";
         args[2] = cmd;
@@ -253,6 +233,7 @@ char * cmd_to_buffer(char * argv[])
     else
     {
         ssize_t retval;
+        size_t  size;
 
         if (!(buffer = (char *)malloc(global.buffer_size)))
         {
@@ -397,12 +378,12 @@ WINDOW * newpad_buffer(const char * buffer, int * cols_count, int * lines_count)
 /*******************************************************************************
 Run command and create pad from results
 *******************************************************************************/
-WINDOW * newpad_cmd(char * argv[])
+WINDOW * newpad_cmd(char * cmd)
 {
     WINDOW * pad;
     char *   buffer;
 
-    if (!(buffer = cmd_to_buffer(argv)))
+    if (!(buffer = cmd_to_buffer(cmd)))
     {
         exit_failed(1, "Failed to allocate command output buffer");
     }
@@ -557,200 +538,255 @@ void draw(WINDOW * pad, int top, int left, const char * cmd, bool lineno)
 /*******************************************************************************
 Print usage
 *******************************************************************************/
-void print_usage(int retval)
+void usage()
 {
     puts("Usage: gaze [options] <command>\n"
          "\n"
          "Options:\n"
-         " -h Show this message\n"
-         " -l Show line number\n"
-         " -n Set interval\n"
-         " -t Set command timeout\n"
-         " -b Set buffer size\n"
+         " -h, --help     Show this message\n"
+         " -l, --lineno   Number all output lines\n"
+         " -n, --interval Set command interval\n"
+         " -t, --timeout  Set command timeout\n"
+         " -b, --buffer   Set buffer size\n"
          "\n"
          "While running press F1 or '?' for help");
 
-    exit(retval);
+    exit(2);
 }
 
 /*******************************************************************************
 Parse arguments
 *******************************************************************************/
+bool parse_long(const char * arg, long * output, char ** endptr)
+{
+    char * s;
+
+    errno = 0;
+
+    *output = strtol(arg, &s, 10);
+
+    if (errno != 0 || s == arg)
+    {
+        return false;
+    }
+
+    if (endptr)
+    {
+        *endptr = s;
+    }
+
+    return true;
+}
+
+bool option(const char * curt, const char * verbose, char * opt, char ** endptr)
+{
+    if (strcmp(verbose, opt) == 0)
+    {
+        *endptr = (char *)"";
+
+        return true;
+    }
+
+    if (!endptr)
+    {
+        if (strcmp(curt, opt) == 0)
+        {
+            return true;
+        }
+    }
+    else
+    {
+        if (strncmp(curt, opt, strlen(curt)) == 0)
+        {
+            *endptr = &opt[strlen(curt)];
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void parse_args(int argc, char * argv[])
 {
-    int argl;
-    int ch;
-    int i;
-
-    argl = 1;
+    int    arg_cmd;
+    size_t size;
+    int    i;
 
     for (i = 1; i < argc; i++)
     {
-        if (i == 1)
+        long   tmp;
+        char * endptr;
+        char * opt_arg;
+
+        if (option("-h", "--help", argv[i], NULL))
         {
-            if (*argv[i] != '-') break;
+            usage();
         }
-        else
+        else if (option("-l", "--lineno", argv[i], NULL))
         {
-            if (*argv[i] != '-' &&
-                (argv[i - 1][0] != '-' || argv[i - 1][1] != 'n') &&
-                (argv[i - 1][0] != '-' || argv[i - 1][1] != 'b') &&
-                (argv[i - 1][0] != '-' || argv[i - 1][1] != 't'))
-                break;
+            global.show_lineno = true;
+
+            continue;
+        }
+        else if (option("-n", "--interval", argv[i], &endptr))
+        {
+            if (!*endptr)
+            {
+                if (i + 1 == argc)
+                {
+                    exit_failed(2, "--interval requires an argument");
+                }
+
+                opt_arg = argv[++i];
+            }
+            else
+            {
+                opt_arg = endptr;
+            }
+
+            if (!parse_long(opt_arg, &tmp, NULL))
+            {
+                exit_failed(2, "Invalid interval: '%s'", opt_arg);
+            }
+
+            if (tmp < 1 || tmp > 60)
+            {
+                exit_failed(2, "Interval out of range [1-60]");
+            }
+
+            global.interval        = (int)tmp;
+            global.interval_digits = count_int_chars(global.interval);
+
+            continue;
+        }
+        else if (option("-t", "--timeout", argv[i], &endptr))
+        {
+            if (!*endptr)
+            {
+                if (i + 1 == argc)
+                {
+                    exit_failed(2, "--timeout requires an argument");
+                }
+
+                opt_arg = argv[++i];
+            }
+            else
+            {
+                opt_arg = endptr;
+            }
+
+            if (!parse_long(opt_arg, &tmp, NULL))
+            {
+                exit_failed(2, "Invalid timeout: '%s'", opt_arg);
+            }
+
+            if (tmp < 1 || tmp > 60)
+            {
+                exit_failed(2, "Timeout out of range [1-60]");
+            }
+
+            global.timeout = (int)tmp;
+
+            continue;
+        }
+        else if (option("-b", "--buffer", argv[i], &endptr))
+        {
+            if (!*endptr)
+            {
+                if (i + 1 == argc)
+                {
+                    exit_failed(2, "--buffer requires an argument");
+                }
+
+                opt_arg = argv[++i];
+            }
+            else
+            {
+                opt_arg = endptr;
+            }
+
+            if (!parse_long(opt_arg, &tmp, &endptr))
+            {
+                exit_failed(2, "Invalid buffer size: '%s'", opt_arg);
+            }
+
+            if (tmp > INT32_MAX)
+            {
+                exit_failed(2, "Buffer size too large");
+            }
+
+            if (*endptr)
+            {
+                if (endptr[1])
+                {
+                    exit_failed(2, "Invalid buffer size: '%s'", opt_arg);
+                }
+
+                switch (*endptr)
+                {
+                    case 'g':
+                    case 'G': tmp *= 1024; FALLTHROUGH;
+                    case 'm':
+                    case 'M': tmp *= 1024; FALLTHROUGH;
+                    case 'k':
+                    case 'K': tmp *= 1024; break;
+                    default:
+                    {
+                        exit_failed(2, "Invalid buffer size: '%s'", opt_arg);
+                    }
+                }
+            }
+
+            if (tmp < 0)
+            {
+                exit_failed(2, "Buffer size must be positive");
+            }
+            else if (tmp < 2)
+            {
+                exit_failed(2, "Buffer size too small");
+            }
+            else if (tmp > INT32_MAX)
+            {
+                exit_failed(2, "Buffer size too large");
+            }
+
+            global.buffer_size = tmp;
+
+            continue;
+        }
+        else if (argv[i][0] == '-')
+        {
+            exit_failed(2, "Invalid option: '%s'", argv[i]);
         }
 
-        argl++;
+        break;
     }
 
-    while ((ch = getopt(argl, argv, ":hln:t:b:")) != -1)
+    if (i == argc)
     {
-        switch (ch)
-        {
-            char * endptr;
-
-            case 'h':
-            {
-                print_usage(2);
-
-                break;
-            }
-            case 'l':
-            {
-                global.show_lineno = true;
-
-                break;
-            }
-            case 'n':
-            {
-                errno = 0;
-
-                global.interval = (int)strtol(optarg, &endptr, 10);
-
-                if (errno != 0 || endptr == optarg)
-                {
-                    exit_failed(2, "Invalid interval: '%s'", optarg);
-                }
-
-                if (global.interval < 1 || global.interval > 60)
-                {
-                    exit_failed(2, "Interval out of range [1-60]");
-                }
-
-                global.interval_digits = count_int_chars(global.interval);
-
-                break;
-            }
-            case 't':
-            {
-                errno = 0;
-
-                global.timeout = (int)strtol(optarg, &endptr, 10);
-
-                if (errno != 0 || endptr == optarg)
-                {
-                    exit_failed(2, "Invalid timeout: '%s'", optarg);
-                }
-
-                if (global.timeout < 1 || global.timeout > 60)
-                {
-                    exit_failed(2, "Timeout out of range [1-60]");
-                }
-
-                break;
-            }
-            case 'b':
-            {
-                errno = 0;
-
-                global.buffer_size = (int)strtol(optarg, &endptr, 10);
-
-                if (errno != 0 || endptr == optarg)
-                {
-                    exit_failed(2, "Invalid buffer size: '%s'", optarg);
-                }
-
-                if (global.buffer_size < 2)
-                {
-                    exit_failed(2, "Buffer size too small");
-                }
-
-                if (global.buffer_size > INT32_MAX)
-                {
-                    exit_failed(2, "Buffer size too large");
-                }
-
-                if (endptr && *endptr)
-                {
-                    if (endptr[1])
-                    {
-                        exit_failed(2, "Invalid buffer size: '%s'", optarg);
-                    }
-
-                    switch (*endptr)
-                    {
-                        case 'g':
-                        case 'G': global.buffer_size *= 1024; FALLTHROUGH;
-                        case 'm':
-                        case 'M': global.buffer_size *= 1024; FALLTHROUGH;
-                        case 'k':
-                        case 'K': global.buffer_size *= 1024; break;
-                        default:
-                        {
-                            exit_failed(2, "Invalid buffer size: '%s'", optarg);
-                        }
-                    }
-                }
-
-                if (global.buffer_size > INT32_MAX)
-                {
-                    exit_failed(2, "Buffer size too large");
-                }
-
-                break;
-            }
-            case ':':
-            {
-                exit_failed(2, "Option -%c requires a value", optopt);
-
-                break;
-            }
-            case '?':
-            {
-                exit_failed(2, "Unknown option -%c", optopt);
-
-                break;
-            }
-            default:
-            {
-                exit_failed(2, "");
-            }
-        }
+        usage();
     }
 
+    arg_cmd = i;
+    size    = 1;
+
+    for (i = arg_cmd; i < argc; i++)
     {
-        size_t cmd_size;
+        size += strlen(argv[i]) + 1;
+    }
 
-        cmd_size = 1;
+    if (!(global.cmd = (char *)malloc(size)))
+    {
+        exit_failed(2, "malloc() failed");
+    }
 
-        for (i = optind; i < argc; i++)
-        {
-            cmd_size += strlen(argv[i]) + 1;
-        }
+    global.cmd[0] = '\0';
 
-        global.cmd = (char *)calloc(1, cmd_size);
-
-        for (i = optind; i < argc; i++)
-        {
-            strcat(global.cmd, argv[i]);
-            strcat(global.cmd, " ");
-        }
-
-        global.cmd[strlen(global.cmd) - 1] = '\0';
-
-        if (optind == argc)
-        {
-            print_usage(0);
-        }
+    for (i = arg_cmd; i < argc; i++)
+    {
+        strcat(global.cmd, argv[i]);
+        strcat(global.cmd, " ");
     }
 }
 
@@ -810,7 +846,7 @@ int main(int argc, char * argv[])
             if ((int)elapsed >= global.interval)
             {
                 /* Create pad from command output */
-                pad = newpad_cmd(&argv[optind]);
+                pad = newpad_cmd(global.cmd);
 
                 /* Record relative and absolute times of command execution */
                 clock_gettime(CLOCK_MONOTONIC, &last_cmd_time);
